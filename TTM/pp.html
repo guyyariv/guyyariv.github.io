@@ -1,0 +1,779 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN">
+<html lang="en">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Through-The-Mask: Mask-based Motion Trajectories for Image-to-Video Generation</title>
+
+<!-- Add a Google Font for improved typography -->
+<link rel="preconnect" href="https://fonts.gstatic.com">
+<link href="https://fonts.googleapis.com/css?family=Noto+Sans:400,700&display=swap" rel="stylesheet">
+
+<style>
+  body {
+    font-family: 'Noto Sans', sans-serif;
+    background-color: #fafafa;
+    color: #333;
+    margin: 0;
+    padding: 0;
+  }
+
+  header {
+    text-align: center;
+    padding: 1em 0 1em 0;
+    background: linear-gradient(to right, #4c6ef5, #15aabf);
+    color: #fff;
+    margin-bottom: 1em;
+  }
+
+  header h1 {
+    font-size: 2em;
+    margin: 0.2em 0;
+    font-weight: normal;
+  }
+
+  .authors {
+    font-size: 1em;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+    color: #fff;
+    text-align: center;
+  }
+
+  nav {
+    background: #fff;
+    border-bottom: 1px solid #ddd;
+    margin-bottom: 1em;
+  }
+
+  nav ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    gap: 2em;
+  }
+
+  nav ul li {
+    margin: 0.5em 0;
+  }
+
+  nav a {
+    text-decoration: none;
+    font-weight: bold;
+    color: #333;
+    transition: color 0.3s;
+  }
+
+  nav a:hover {
+    color: #2575fc;
+  }
+
+  h2.results, h2.section-title {
+    text-align: center;
+    font-size: 1.5em;
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+    font-weight: 700;
+    color: #333;
+  }
+
+  hr {
+    border: none;
+    border-top: 1px solid #ddd;
+    margin: 2em 0;
+  }
+
+  a:link, a:visited {
+    color: #2575fc;
+    text-decoration: underline;
+  }
+
+  a:hover {
+    color: #ff0000;
+    text-decoration: none;
+  }
+
+  .page-container {
+    margin: 0 auto;
+    text-align: left;
+    padding: 1em;
+    max-width: 1200px;
+  }
+
+  .title {
+    font-style: italic;
+    font-size: 18px;
+    color: #444;
+    margin-bottom: 0.5em;
+    text-align: center;
+  }
+
+  .video-gallery {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 10px;
+    justify-content: center;
+  }
+
+  .video-item {
+    flex: 0 0 auto;
+    text-align: center;
+  }
+
+  .video {
+    display: block;
+    width: 768px;
+    height: 260px;
+    margin: 0;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    background: #fff;
+  }
+
+  .baselines_unet_prompt_container {
+    text-align: center;
+    margin-bottom: 5px;
+  }
+
+  .baselines_unet_prompt {
+    font-style: italic;
+    font-size: 18px;
+    font-weight: normal;
+    margin: 0;
+    color: #000;
+  }
+
+  .baselines_unet_container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    margin-bottom: 10px;
+  }
+
+  .baselines_unet_item {
+    margin: 0;
+    padding: 0;
+    text-align: center;
+    font-weight: normal;
+  }
+
+  .baselines_unet_item_title {
+    font-size: 18px;
+    font-weight: normal;
+    margin: 0;
+    padding: 0;
+    text-align: center;
+    color: #444;
+    margin-top: 5px;
+  }
+
+  .baselines_unet_item_media {
+    width: 256px;
+    height: 256px;
+    object-fit: cover;
+    border-radius: 10px;
+    background-color: #fff;
+    display: block;
+    margin: 0;
+    padding: 0;
+  }
+
+  .baselines_unet_item strong {
+    color: #2575fc;
+  }
+
+  .comparison-row {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 0;
+  }
+
+  .comparison-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  #mask-vs-flow .baselines_unet_container {
+    margin-bottom: 10px;
+  }
+
+  #mask-vs-flow .baselines_unet_item,
+  #mask-vs-flow .baselines_unet_item_title,
+  #mask-vs-flow .baselines_unet_item_media,
+  #mask-vs-flow .baselines_unet_prompt_container {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  #mask-vs-flow .baselines_unet_item_title {
+    margin-top: 0 !important;
+  }
+
+  #mask-vs-flow .baselines_unet_container {
+    gap: 0 !important;
+  }
+
+  #mask-vs-flow video,
+  #mask-vs-flow img {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .method-figure-container {
+    text-align: center;
+    margin-bottom: 2em;
+  }
+
+  #method p {
+    margin: 0 0 2em 0;
+    font-size: 1em;
+    line-height: 1.5em;
+    text-align: left;
+  }
+
+  #mask-vs-flow p {
+    font-size: 1.2em;
+  }
+</style>
+
+</head>
+
+<body>
+<header>
+  <h1>Through-The-Mask: Mask-based Motion Trajectories for <br>Image-to-Video Generation</h1>
+  <p class="authors">
+    Guy Yariv<sup>1,3</sup> &emsp; Yuval Kirstain<sup>1</sup> &emsp; Amit Zohar<sup>1</sup> &emsp; Shelly Sheynin<sup>1</sup> &emsp; Yaniv Taigman<sup>1</sup><br>
+    Yossi Adi<sup>2,3</sup> &emsp; Sagie Benaim<sup>3</sup> &emsp; Adam Polyak<sup>1</sup><br><br>
+    <sup>1</sup>GenAI, Meta &emsp; <sup>2</sup>FAIR, Meta &emsp; <sup>3</sup>The Hebrew University of Jerusalem
+    <br><br>
+    <a href="https://arxiv.org/abs/1234.56789" target="_blank"
+       style="color: white; margin-right: 15px;">Paper</a>
+    <a href="https://arxiv.org/abs/1234.56789" target="_blank" style="color: white;">Benchmark</a>
+  </p>
+</header>
+
+<!-- TLDR Section -->
+<section id="tldr" style="padding:1em; margin-bottom:1em; max-width:1200px; margin:0 auto; font-family:'Noto Sans', sans-serif;">
+  <h2 style="text-align:center; font-size:1.5em; margin-top:0; margin-bottom:0.5em; color:#333;">
+    TL;DR
+  </h2>
+  <p style="text-align:center; font-size:1.2em; line-height:1.5em; margin:0 auto; max-width:1000px; color:#333;">
+    We propose <span style="font-weight:bold; font-style:italic;">Through-The-Mask</span>, a two-stage framework for Image-to-Video generation that uses mask-based motion trajectories to enhance object-specific motion accuracy and consistency, achieving state-of-the-art results, particularly in multi-object scenarios.
+  </p>
+</section>
+
+<nav>
+  <ul>
+    <li><a href="#ours-results">Videos</a></li>
+    <li><a href="#abstract-section">Abstract</a></li>
+    <li><a href="#method">Method</a></li>
+    <li><a href="#comparisons">Comparisons</a></li>
+    <li><a href="#mask-vs-flow">Ablations</a></li>
+    <li><a href="#bibtex">BibTex</a></li>
+  </ul>
+</nav>
+
+<div class="page-container">
+
+  <!-- Qualitative Examples first -->
+  <section id="ours-results">
+    <h2 class="results">Videos (DiT-based Model)</h2>
+    <div class="video-gallery">
+      <div class="video-item">
+        <div class="title">The metallic robot with blue eyes performs a series of fast push-ups.</div>
+        <video class="video" src="assets/comb_cp_dit/robot_push_ups.mp4" autoplay loop muted></video>
+      </div>
+      <div class="video-item">
+        <div class="title">The bear strolls through the forest, taking slow, deliberate steps.</div>
+        <video class="video" src="assets/comb_cp_dit/bear.mp4" autoplay loop muted></video>
+      </div>
+    </div>
+
+    <div class="video-gallery">
+      <div class="video-item">
+        <div class="title">A monster and a squirrel shake hands gently, and continue moving while shaking hands.</div>
+        <video class="video" src="assets/comb_cp_dit/squirrel_pink_monster.mp4" autoplay loop muted></video>
+      </div>
+      <div class="video-item">
+        <div class="title">The left and right meerkats play together.</div>
+        <video class="video" src="assets/comb_cp_dit/meerkats.mp4" autoplay loop muted></video>
+      </div>
+    </div>
+
+    <div class="video-gallery">
+      <div class="video-item">
+        <div class="title">The gibbon sits on a rock, raising a hand as if waving to an audience.</div>
+        <video class="video" src="assets/comb_cp_dit/gibbon.mp4" autoplay loop muted></video>
+      </div>
+      <div class="video-item">
+        <div class="title">The gorilla strums the guitar rhythmically.</div>
+        <video class="video" src="assets/comb_cp_dit/gorilla_guitar.mp4" autoplay loop muted></video>
+      </div>
+    </div>
+
+    <div class="video-gallery">
+      <div class="video-item">
+        <div class="title">One parrot gracefully stretches its wings while the other looks on.</div>
+        <video class="video" src="assets/comb_cp_dit/parrots.mp4" autoplay loop muted></video>
+      </div>
+      <div class="video-item">
+        <div class="title">The gorilla raises both arms high above its head, stretching with a serene expression.</div>
+        <video class="video" src="assets/comb_cp_dit/gorilla_yoga.mp4" autoplay loop muted></video>
+      </div>
+    </div>
+    <!-- Removed the dog example here -->
+
+
+    <h2 class="results">Videos (U-Net-based Model)</h2>
+    <div class="video-gallery">
+      <div class="video-item">
+        <div class="title">The race car on the track speeds up.</div>
+        <video class="video" src="assets/comb_cp_unet/race_car.mp4" autoplay loop muted></video>
+      </div>
+      <div class="video-item">
+        <div class="title">Two vibrant parrots bob their heads in unison.</div>
+        <video class="video" src="assets/comb_cp_unet/parrots.mp4" autoplay loop muted></video>
+      </div>
+    </div>
+
+    <div class="video-gallery">
+      <div class="video-item">
+        <div class="title">The ocean waves gently rise and fall.</div>
+        <video class="video" src="assets/comb_cp_unet/ocean.mp4" autoplay loop muted></video>
+      </div>
+      <div class="video-item">
+        <div class="title">The bug car drives forward.</div>
+        <video class="video" src="assets/comb_cp_unet/bug_car.mp4" autoplay loop muted></video>
+      </div>
+    </div>
+
+    <div class="video-gallery">
+      <div class="video-item">
+        <div class="title">One shark glides smoothly near the seafloor, while the other shark swims upward.</div>
+        <video class="video" src="assets/comb_cp_unet/sharks.mp4" autoplay loop muted></video>
+      </div>
+      <div class="video-item">
+        <div class="title">A snowman in a forest caught in a burst of flames.</div>
+        <video class="video" src="assets/comb_cp_unet/snowman.mp4" autoplay loop muted></video>
+      </div>
+    </div>
+
+    <div class="video-gallery">
+      <div class="video-item">
+        <div class="title">A serene waterfall cascades gently over rocks, surrounded by lush greenery.</div>
+        <video class="video" src="assets/comb_cp_unet/waterfall.mp4" autoplay loop muted></video>
+      </div>
+      <div class="video-item">
+        <div class="title">The fox gracefully strolls across the snowy landscape.</div>
+        <video class="video" src="assets/comb_cp_unet/fox.mp4" autoplay loop muted></video>
+      </div>
+    </div>
+
+<!--    <div class="video-gallery">-->
+<!--      <div class="video-item">-->
+<!--        <div class="title">The bug car drives forward.</div>-->
+<!--        <video class="video" src="assets/comb_cp_unet/bug_car.mp4" autoplay loop muted></video>-->
+<!--      </div>-->
+<!--    </div>-->
+
+  </section>
+
+  <hr>
+
+  <section id="abstract-section">
+    <h2 class="section-title">Abstract</h2>
+    <p>
+      We consider the task of Image-to-Video (I2V) generation, which involves transforming static images into realistic video sequences based on a textual description.
+      While recent advancements produce photorealistic outputs, they frequently struggle to create videos with accurate and consistent object motion, especially in multi-object scenarios.
+      To address these limitations, we propose a two-stage compositional framework that decomposes I2V generation into: (i) An explicit intermediate representation generation stage, followed by (ii) A video generation stage that is conditioned on this representation.
+      Our key innovation is the introduction of a mask-based motion trajectory as an intermediate representation, that captures both semantic object information and motion, enabling an expressive but compact representation of motion and semantics.
+      To incorporate the learned representation in the second stage, we utilize object-level attention objectives. Specifically, we consider a spatial, per-object, masked-cross attention objective, integrating object-specific prompts into corresponding latent space regions and a masked spatio-temporal self-attention objective, ensuring frame-to-frame consistency for each object.
+      We evaluate our method on challenging benchmarks with multi-object and high-motion scenarios and empirically demonstrate that the proposed method achieves state-of-the-art results in temporal coherence, motion realism, and text-prompt faithfulness.
+      Additionally, we introduce a new challenging benchmark for single-object and multi-object I2V generation and demonstrate our method's superiority on this benchmark.
+    </p>
+  </section>
+
+  <hr>
+
+  <section id="method">
+    <!-- Load MathJax for LaTeX math rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+
+    <h2 class="results">Method</h2>
+    <div class="method-figure-container">
+      <img src="assets/figs/method.png" alt="Method Figure" style="max-width:100%; height:auto;">
+    </div>
+    <p>
+      Overview of our I2V framework, transforming a reference image \( x^{(0)} \) and text prompt \( c \) into a coherent video sequence \( \hat{x} \).
+      A pre-trained LLM is used to derive the motion-specific prompt \( c_{motion} \) and object-specific prompts
+      \( c_{local} = \{c_{local}^{(1)}, \dots, c_{local}^{(L)}\} \) capturing each object's intended motion.
+      We generate an initial segmentation mask \( s^{(0)} \) from \( x^{(0)} \) using SAM2.
+      In Stage 1, the Image-to-Motion utilizes \( x^{(0)}, s^{(0)}, c_{motion} \)
+      to generate mask-based motion trajectories \( \hat{s} \) that represent object-specific movement paths.
+      In Stage 2, the Motion-to-Video takes as input \( x^{(0)}, \hat{s}, c \) as a global condition,
+      and \( c_{local} \) through masked attention blocks, integrating the mask-based motion trajectory softly using learned attention layers.
+      Specifically, we employ (i) masked cross-attention to integrate object-specific prompts into corresponding latent space regions, and (ii) masked self-attention to ensure each object maintains consistency across frames by restricting attention to object-defined regions.
+    </p>
+  </section>
+
+  <hr>
+
+  <section id="comparisons">
+    <h2 class="results">Qualitative Comparisons: DiT-based Model</h2>
+    <div class="comparison-item" style="margin-top:20px;">
+      <div class="baselines_unet_prompt_container">
+        <div class="baselines_unet_prompt">The aliens dance the robot dance.</div>
+      </div>
+      <div class="baselines_unet_container">
+        <div class="baselines_unet_item">
+          <img src="assets/comp_dit/ours/alien_alien.png" alt="Image" class="baselines_unet_item_media">
+          <div class="baselines_unet_item_title">Input image</div>
+        </div>
+        <div class="baselines_unet_item">
+          <video src="assets/comp_dit/ours/alien_alien.mp4" autoplay loop muted class="baselines_unet_item_media"></video>
+          <div class="baselines_unet_item_title"><strong>Ours</strong></div>
+        </div>
+        <div class="baselines_unet_item">
+          <video src="assets/comp_dit/ti2v/alien_alien.mp4" autoplay loop muted class="baselines_unet_item_media"></video>
+          <div class="baselines_unet_item_title">TI2V</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="comparison-item">
+      <div class="baselines_unet_prompt_container">
+        <div class="baselines_unet_prompt">The car races up the mountain road.</div>
+      </div>
+      <div class="baselines_unet_container">
+        <div class="baselines_unet_item">
+          <img src="assets/comp_dit/ours/car_mountain.png" alt="Image" class="baselines_unet_item_media">
+          <div class="baselines_unet_item_title">Input image</div>
+        </div>
+        <div class="baselines_unet_item">
+          <video src="assets/comp_dit/ours/car_mountain.mp4" autoplay loop muted class="baselines_unet_item_media"></video>
+          <div class="baselines_unet_item_title"><strong>Ours</strong></div>
+        </div>
+        <div class="baselines_unet_item">
+          <video src="assets/comp_dit/ti2v/car_mountain.mp4" autoplay loop muted class="baselines_unet_item_media"></video>
+          <div class="baselines_unet_item_title">TI2V</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="comparison-item">
+      <div class="baselines_unet_prompt_container">
+        <div class="baselines_unet_prompt">The orangutan extends both arms and performs a peaceful pose.</div>
+      </div>
+      <div class="baselines_unet_container">
+        <div class="baselines_unet_item">
+          <img src="assets/comp_dit/ours/orangutan_yoga.png" alt="Image" class="baselines_unet_item_media">
+          <div class="baselines_unet_item_title">Input image</div>
+        </div>
+        <div class="baselines_unet_item">
+          <video src="assets/comp_dit/ours/orangutan.mp4" autoplay loop muted class="baselines_unet_item_media"></video>
+          <div class="baselines_unet_item_title"><strong>Ours</strong></div>
+        </div>
+        <div class="baselines_unet_item">
+          <video src="assets/comp_dit/ti2v/orangutan.mp4" autoplay loop muted class="baselines_unet_item_media"></video>
+          <div class="baselines_unet_item_title">TI2V</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="comparison-item">
+      <div class="baselines_unet_prompt_container">
+        <div class="baselines_unet_prompt">The red car on the right speeds away, leaving a cloud of dust behind, while the black car on the left moves forward slowly.</div>
+      </div>
+      <div class="baselines_unet_container">
+        <div class="baselines_unet_item">
+          <img src="assets/comp_dit/ours/sport_cars.png" alt="Image" class="baselines_unet_item_media">
+          <div class="baselines_unet_item_title">Input image</div>
+        </div>
+        <div class="baselines_unet_item">
+          <video src="assets/comp_dit/ours/sport_cars.mp4" autoplay loop muted class="baselines_unet_item_media"></video>
+          <div class="baselines_unet_item_title"><strong>Ours</strong></div>
+        </div>
+        <div class="baselines_unet_item">
+          <video src="assets/comp_dit/ti2v/sport_cars.mp4" autoplay loop muted class="baselines_unet_item_media"></video>
+          <div class="baselines_unet_item_title">TI2V</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="comparison-item">
+      <div class="baselines_unet_prompt_container">
+        <div class="baselines_unet_prompt">One snake threatens the other, while the other snake rests.</div>
+      </div>
+      <div class="baselines_unet_container">
+        <div class="baselines_unet_item">
+          <img src="assets/comp_dit/ours/water_snakes.png" alt="Image" class="baselines_unet_item_media">
+          <div class="baselines_unet_item_title">Input image</div>
+        </div>
+        <div class="baselines_unet_item">
+          <video src="assets/comp_dit/ours/water_snakes.mp4" autoplay loop muted class="baselines_unet_item_media"></video>
+          <div class="baselines_unet_item_title"><strong>Ours</strong></div>
+        </div>
+        <div class="baselines_unet_item">
+          <video src="assets/comp_dit/ti2v/water_snakes.mp4" autoplay loop muted class="baselines_unet_item_media"></video>
+          <div class="baselines_unet_item_title">TI2V</div>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="results">Qualitative Comparisons: U-Net-based Approaches</h2>
+    <div class="baselines_unet_prompt_container" style="margin-top:20px;">
+      <div class="baselines_unet_prompt">Two emus jog side by side through a forest path.</div>
+    </div>
+    <div class="baselines_unet_container">
+      <div class="baselines_unet_item">
+        <img src="assets/comp_unet/ours/emus_jog.png" alt="Image" class="baselines_unet_item_media">
+        <div class="baselines_unet_item_title">Input image</div>
+      </div>
+      <div class="baselines_unet_item">
+        <video src="assets/comp_unet/ours/emus_jog.mp4" autoplay loop muted class="baselines_unet_item_media"></video>
+        <div class="baselines_unet_item_title"><strong>Ours</strong></div>
+      </div>
+      <div class="baselines_unet_item">
+        <video src="assets/comp_unet/TI2V/emus_jog.mp4" autoplay loop muted class="baselines_unet_item_media"></video>
+        <div class="baselines_unet_item_title">TI2V</div>
+      </div>
+      <div class="baselines_unet_item">
+        <video src="assets/comp_unet/ConsistI2V/emus_jog.mp4" autoplay loop muted class="baselines_unet_item_media"></video>
+        <div class="baselines_unet_item_title">ConsistI2V</div>
+      </div>
+      <div class="baselines_unet_item">
+        <video src="assets/comp_unet/Motion-I2V/emus_jog.mp4" autoplay loop muted class="baselines_unet_item_media"></video>
+        <div class="baselines_unet_item_title">Motion-I2V</div>
+      </div>
+      <div class="baselines_unet_item">
+        <video src="assets/comp_unet/DynamiCrafter/emus_jog.mp4" autoplay loop muted class="baselines_unet_item_media"></video>
+        <div class="baselines_unet_item_title">DynamiCrafter</div>
+      </div>
+      <div class="baselines_unet_item">
+        <video src="assets/comp_unet/VideoCrafter/emus_jog.mp4" autoplay loop muted class="baselines_unet_item_media"></video>
+        <div class="baselines_unet_item_title">VideoCrafter</div>
+      </div>
+    </div>
+
+    <!-- Remaining U-Net-based comparisons unchanged -->
+    <div class="baselines_unet_prompt_container">
+      <div class="baselines_unet_prompt">The gorilla strums the guitar rhythmically.</div>
+    </div>
+    <div class="baselines_unet_container">
+      <div class="baselines_unet_item">
+        <img src="assets/comp_unet/ours/gorilla_guitar.png" alt="Image" class="baselines_unet_item_media">
+        <div class="baselines_unet_item_title">Input image</div>
+      </div>
+      <div class="baselines_unet_item">
+        <video src="assets/comp_unet/ours/gorilla_guitar.mp4" autoplay loop muted class="baselines_unet_item_media"></video>
+        <div class="baselines_unet_item_title"><strong>Ours</strong></div>
+      </div>
+      <div class="baselines_unet_item">
+        <video src="assets/comp_unet/TI2V/gorilla_guitar.mp4" autoplay loop muted class="baselines_unet_item_media"></video>
+        <div class="baselines_unet_item_title">TI2V</div>
+      </div>
+      <div class="baselines_unet_item">
+        <video src="assets/comp_unet/ConsistI2V/gorilla_guitar.mp4" autoplay loop muted class="baselines_unet_item_media"></video>
+        <div class="baselines_unet_item_title">ConsistI2V</div>
+      </div>
+      <div class="baselines_unet_item">
+        <video src="assets/comp_unet/Motion-I2V/gorilla_guitar.mp4" autoplay loop muted class="baselines_unet_item_media"></video>
+        <div class="baselines_unet_item_title">Motion-I2V</div>
+      </div>
+      <div class="baselines_unet_item">
+        <video src="assets/comp_unet/DynamiCrafter/gorilla_guitar.mp4" autoplay loop muted class="baselines_unet_item_media"></video>
+        <div class="baselines_unet_item_title">DynamiCrafter</div>
+      </div>
+      <div class="baselines_unet_item">
+        <video src="assets/comp_unet/VideoCrafter/gorilla_guitar.mp4" autoplay loop muted class="baselines_unet_item_media"></video>
+        <div class="baselines_unet_item_title">VideoCrafter</div>
+      </div>
+    </div>
+
+    <div class="baselines_unet_prompt_container">
+      <div class="baselines_unet_prompt">A happy penguin rolling along on bright pink roller skates, wings flapping to keep steady as it moves.</div>
+    </div>
+    <div class="baselines_unet_container">
+      <div class="baselines_unet_item">
+        <img src="assets/comp_unet/ours/penguin.png" alt="Image" class="baselines_unet_item_media">
+        <div class="baselines_unet_item_title">Input image</div>
+      </div>
+      <div class="baselines_unet_item">
+        <video src="assets/comp_unet/ours/penguin.mp4" autoplay loop muted class="baselines_unet_item_media"></video>
+        <div class="baselines_unet_item_title"><strong>Ours</strong></div>
+      </div>
+      <div class="baselines_unet_item">
+        <video src="assets/comp_unet/TI2V/penguin.mp4" autoplay loop muted class="baselines_unet_item_media"></video>
+        <div class="baselines_unet_item_title">TI2V</div>
+      </div>
+      <div class="baselines_unet_item">
+        <video src="assets/comp_unet/ConsistI2V/penguin.mp4" autoplay loop muted class="baselines_unet_item_media"></video>
+        <div class="baselines_unet_item_title">ConsistI2V</div>
+      </div>
+      <div class="baselines_unet_item">
+        <video src="assets/comp_unet/Motion-I2V/penguin.mp4" autoplay loop muted class="baselines_unet_item_media"></video>
+        <div class="baselines_unet_item_title">Motion-I2V</div>
+      </div>
+      <div class="baselines_unet_item">
+        <video src="assets/comp_unet/DynamiCrafter/penguin.mp4" autoplay loop muted class="baselines_unet_item_media"></video>
+        <div class="baselines_unet_item_title">DynamiCrafter</div>
+      </div>
+      <div class="baselines_unet_item">
+        <video src="assets/comp_unet/VideoCrafter/penguin.mp4" autoplay loop muted class="baselines_unet_item_media"></video>
+        <div class="baselines_unet_item_title">VideoCrafter</div>
+      </div>
+    </div>
+
+    <div class="baselines_unet_prompt_container">
+      <div class="baselines_unet_prompt">The robot swims forward smoothly.</div>
+    </div>
+    <div class="baselines_unet_container">
+      <div class="baselines_unet_item">
+        <img src="assets/comp_unet/ours/robot_water.png" alt="Image" class="baselines_unet_item_media">
+        <div class="baselines_unet_item_title">Input image</div>
+      </div>
+      <div class="baselines_unet_item">
+        <video src="assets/comp_unet/ours/robot_water.mp4" autoplay loop muted class="baselines_unet_item_media"></video>
+        <div class="baselines_unet_item_title"><strong>Ours</strong></div>
+      </div>
+      <div class="baselines_unet_item">
+        <video src="assets/comp_unet/TI2V/robot_water.mp4" autoplay loop muted class="baselines_unet_item_media"></video>
+        <div class="baselines_unet_item_title">TI2V</div>
+      </div>
+      <div class="baselines_unet_item">
+        <video src="assets/comp_unet/ConsistI2V/robot_water.mp4" autoplay loop muted class="baselines_unet_item_media"></video>
+        <div class="baselines_unet_item_title">ConsistI2V</div>
+      </div>
+      <div class="baselines_unet_item">
+        <video src="assets/comp_unet/Motion-I2V/robot_water.mp4" autoplay loop muted class="baselines_unet_item_media"></video>
+        <div class="baselines_unet_item_title">Motion-I2V</div>
+      </div>
+      <div class="baselines_unet_item">
+        <video src="assets/comp_unet/DynamiCrafter/robot_water.mp4" autoplay loop muted class="baselines_unet_item_media"></video>
+        <div class="baselines_unet_item_title">DynamiCrafter</div>
+      </div>
+      <div class="baselines_unet_item">
+        <video src="assets/comp_unet/VideoCrafter/robot_water.mp4" autoplay loop muted class="baselines_unet_item_media"></video>
+        <div class="baselines_unet_item_title">VideoCrafter</div>
+      </div>
+    </div>
+
+    <div class="baselines_unet_prompt_container">
+      <div class="baselines_unet_prompt">The two kangaroos stand up in perfect synchronization.</div>
+    </div>
+    <div class="baselines_unet_container">
+      <div class="baselines_unet_item">
+        <img src="assets/comp_unet/ours/kangaroos.png" alt="Image" class="baselines_unet_item_media">
+        <div class="baselines_unet_item_title">Input image</div>
+      </div>
+      <div class="baselines_unet_item">
+        <video src="assets/comp_unet/ours/kangaroos.mp4" autoplay loop muted class="baselines_unet_item_media"></video>
+        <div class="baselines_unet_item_title"><strong>Ours</strong></div>
+      </div>
+      <div class="baselines_unet_item">
+        <video src="assets/comp_unet/TI2V/kangaroos.mp4" autoplay loop muted class="baselines_unet_item_media"></video>
+        <div class="baselines_unet_item_title">TI2V</div>
+      </div>
+      <div class="baselines_unet_item">
+        <video src="assets/comp_unet/ConsistI2V/kangaroos.mp4" autoplay loop muted class="baselines_unet_item_media"></video>
+        <div class="baselines_unet_item_title">ConsistI2V</div>
+      </div>
+      <div class="baselines_unet_item">
+        <video src="assets/comp_unet/Motion-I2V/kangaroos.mp4" autoplay loop muted class="baselines_unet_item_media"></video>
+        <div class="baselines_unet_item_title">Motion-I2V</div>
+      </div>
+      <div class="baselines_unet_item">
+        <video src="assets/comp_unet/DynamiCrafter/kangaroos.mp4" autoplay loop muted class="baselines_unet_item_media"></video>
+        <div class="baselines_unet_item_title">DynamiCrafter</div>
+      </div>
+      <div class="baselines_unet_item">
+        <video src="assets/comp_unet/VideoCrafter/kangaroos.mp4" autoplay loop muted class="baselines_unet_item_media"></video>
+        <div class="baselines_unet_item_title">VideoCrafter</div>
+      </div>
+    </div>
+  </section>
+
+  <hr>
+
+  <section id="mask-vs-flow" style="margin:0;padding:0;">
+    <h2 class="results">Mask vs Flow-based Representations</h2>
+    <p style="text-align:center; margin-bottom:20px; font-size:1.2em;">We compare our method using a mask-based trajectory to our method using flow-based trajectory.</p>
+
+    <div class="baselines_unet_prompt_container">
+      <div class="baselines_unet_prompt">The chimpanzees hold each other's hands and move their free hands up and down.</div>
+    </div>
+    <div class="baselines_unet_container">
+      <div class="baselines_unet_item">
+        <img src="assets/vs_flow/ours/chimpanzees.png" alt="Image" class="baselines_unet_item_media">
+        <div class="baselines_unet_item_title">Input image</div>
+      </div>
+      <div class="baselines_unet_item">
+        <video src="assets/vs_flow/ours/chimpanzees_cond.mp4" autoplay loop muted class="baselines_unet_item_media"></video>
+        <div class="baselines_unet_item_title">Generated mask</div>
+      </div>
+      <div class="baselines_unet_item">
+        <video src="assets/vs_flow/ours/chimpanzees.mp4" autoplay loop muted class="baselines_unet_item_media"></video>
+        <div class="baselines_unet_item_title"><strong>Mask-based model (Ours)</strong></div>
+      </div>
+      <div class="baselines_unet_item">
+        <video src="assets/vs_flow/of/chimpanzees_cond.mp4" autoplay loop muted class="baselines_unet_item_media"></video>
+        <div class="baselines_unet_item_title">Generated flow</div>
+      </div>
+      <div class="baselines_unet_item">
+        <video src="assets/vs_flow/of/chimpanzees.mp4" autoplay loop muted class="baselines_unet_item_media"></video>
+        <div class="baselines_unet_item_title">Flow-based model</div>
+      </div>
+    </div>
+
+    <div class="baselines_unet_prompt_container">
+      <div class="baselines_unet_prompt">The jeep rumbles forward on the winding mountain road.</div>
+    </div>
+    <div class="baselines_unet_container">
+      <div class="baselines_unet_item">
+        <img src="assets/vs_flow/ours/jeep.png" alt="Image" class="baselines_unet_item_media">
+        <div class="baselines_unet_item_title">Input image</div>
+      </div>
+      <div class="baselines_unet_item">
+        <video src="assets/vs_flow/ours/jeep_cond.mp4" autoplay loop muted class="baselines_unet_item_media"></video>
+        <div class="baselines_unet_item_title">Generated mask</div>
+      </div>
+      <div class="baselines_unet_item">
+        <video src="assets/vs_flow/ours/jeep.mp4" autoplay loop muted class="baselines_unet_item_media"></video>
+        <div class="baselines_unet_item_title"><strong>Mask-based model (Ours)</strong></div>
+      </div>
+      <div class="baselines_unet_item">
+        <video src="assets/vs_flow/of/jeep_cond.mp4" autoplay loop muted class="baselines_unet_item_media"></video>
+        <div class="baselines_unet_item_title">Generated flow</div>
+      </div>
+      <div class="baselines_unet_item">
+        <video src="assets/vs_flow/of/jeep.mp4" autoplay loop muted class="baselines_unet_item_media"></video>
+        <div class="baselines_unet_item_title">Flow-based model</div>
+      </div>
+    </div>
+  </section>
+
+  <hr>
+
+  <section id="bibtex">
+    <h2 class="results">BibTex</h2>
+    <pre style="background:#f0f0f0; padding:1em; border-radius:5px; max-width:1200px; margin:0 auto; font-size:0.9em; overflow:auto;">
+@article{Yariv2024,
+  title={Through-The-Mask: Mask-based Motion Trajectories for Image-to-Video Generation},
+  author={Yariv, Guy and Kirstain, Yuval and Zohar, Amit and Sheynin, Shelly and Taigman, Yaniv and Adi, Yossi and Benaim, Sagie and Polyak, Adam},
+  journal={arXiv preprint arXiv:1234.56789},
+  year={2024}
+}
+    </pre>
+  </section>
+
+</div>
+
+</body>
+</html>
